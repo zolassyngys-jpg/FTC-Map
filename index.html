@@ -64,3 +64,40 @@
                 const response = await fetch(CSV_URL + '&t=' + Date.now());
                 const text = await response.text();
                 const rows = text.split('\n').slice(1);
+
+                rows.forEach(row => {
+                    const col = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/"/g, '').trim());
+                    if (col.length < 4) return;
+
+                    const name = col[1];
+                    const school = col[2];
+                    const coords = col[3];
+                    const social = col[4]; // Колонка E
+
+                    if (coords && coords.includes(',')) {
+                        const pos = coords.split(',').map(Number);
+
+                        // Кнопка связи
+                        let btnHtml = '';
+                        if (social && social.startsWith('http')) {
+                            btnHtml = `<br><a href="${social}" target="_blank" class="contact-btn">Связаться</a>`;
+                        }
+
+                        const content = `
+                            <div style="text-align:center; padding: 5px;">
+                                <b style="font-size:16px; color:#1a1a1b;">${name}</b><br>
+                                <span style="color:#65676b; font-size:13px;">${school}</span>
+                                ${btnHtml}
+                            </div>
+                        `;
+
+                        // Используем стандартный маркер (синяя точка)
+                        L.marker(pos).addTo(map).bindPopup(content);
+                    }
+                });
+            } catch (err) { console.error(err); }
+        }
+        loadData();
+    </script>
+</body>
+</html>
