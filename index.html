@@ -18,7 +18,6 @@
             text-align: center; padding: 10px; text-decoration: none;
             border-radius: 8px; font-weight: bold; margin-top: 10px;
         }
-        /* Стиль только для тех, у кого ЕСТЬ свое лого */
         .team-logo-custom {
             border-radius: 50%;
             border: 2px solid #007bff;
@@ -43,7 +42,8 @@
 
         async function loadTeams() {
             try {
-                const response = await fetch(table_url + '&t=' + Math.random());
+                // Добавляем t=Date.now(), чтобы браузер не брал старые данные из памяти
+                const response = await fetch(table_url + '&t=' + Date.now());
                 const data = await response.text();
                 const rows = data.split('\n').slice(1); 
 
@@ -61,19 +61,19 @@
                         
                         let markerOptions = {};
 
-                        // ПРОВЕРКА: Если ссылка рабочая — создаем кастомную иконку
-                        if (photo && photo.startsWith('http') && photo.toUpperCase() !== "FTC") {
+                        // ЛОГИКА: Если в таблице ссылка (начинается на http) И это не слово FTC
+                        if (photo && photo.toLowerCase().startsWith('http') && photo.toUpperCase() !== "FTC") {
                             markerOptions.icon = L.icon({
                                 iconUrl: photo,
                                 iconSize: [40, 40],
                                 iconAnchor: [20, 20],
                                 className: 'team-logo-custom'
                             });
-                        } 
-                        // ИНАЧЕ — Leaflet сам поставит стандартную синюю иконку
+                        }
+                        // Если условие выше не сработало, Leaflet сам поставит синюю иконку
 
                         const popup = `<div style="text-align:center;">
-                            ${photo && photo.startsWith('http') ? `<img src="${photo}" style="width:50px; border-radius:50%;"><br>` : ''}
+                            ${(markerOptions.icon) ? `<img src="${photo}" style="width:50px; border-radius:50%; margin-bottom:5px;"><br>` : ''}
                             <b>${name}</b><br>${school}</div>`;
 
                         L.marker(latLon, markerOptions).addTo(map).bindPopup(popup);
