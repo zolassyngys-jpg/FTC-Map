@@ -35,16 +35,16 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        var map = L.map('map').setView([43.2389, 76.8897], 11);
+        var map = L.map('map').setView([48.0196, 66.9237], 5);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // Прямая ссылка на лого FTC
-        const ftcLogoUrl = 'https://raw.githubusercontent.com/FIRST-Tech-Challenge/ftc_app/master/doc/images/ftc_logo.png';
+        const ftcLogo = 'https://raw.githubusercontent.com/FIRST-Tech-Challenge/ftc_app/master/doc/images/ftc_logo.png';
         const table_url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjtR3gDUmiRfsiFki23ufThV69yij-sSlcfG1-CATeDHyAhpcH2bgEPcWz9H-0hy5Ge2p9E422f-BR/pub?gid=390633659&single=true&output=csv';
 
         async function loadTeams() {
             try {
-                const response = await fetch(table_url + '&nocache=' + new Date().getTime());
+                // Добавляем случайное число к ссылке, чтобы обойти кэш
+                const response = await fetch(table_url + '&t=' + Math.random());
                 const data = await response.text();
                 const rows = data.split('\n').slice(1); 
 
@@ -55,28 +55,28 @@
                     const name = columns[1]?.replace(/"/g, '').trim();    
                     const school = columns[2]?.replace(/"/g, '').trim();  
                     const coordsRaw = columns[3]?.replace(/"/g, '').trim(); 
-                    let photoLink = columns[5]?.replace(/"/g, '').trim();
+                    let photo = columns[5]?.replace(/"/g, '').trim();
 
-                    // ТВОЯ ИДЕЯ: Если написано FTC или пусто — ставим лого
-                    if (!photoLink || photoLink.toUpperCase() === "FTC" || photoLink.length < 5) {
-                        photoLink = ftcLogoUrl;
+                    // ЖЕСТКАЯ ПРОВЕРКА: Если в ячейке не прямая ссылка — ставим лого FTC
+                    if (!photo || photo.toUpperCase() === "FTC" || !photo.startsWith('http')) {
+                        photo = ftcLogo;
                     }
 
                     if (coordsRaw && coordsRaw.includes(',')) {
                         const latLon = coordsRaw.split(',').map(item => parseFloat(item.trim()));
                         
-                        const teamIcon = L.icon({
-                            iconUrl: photoLink,
-                            iconSize: [42, 42],
-                            iconAnchor: [21, 21],
+                        const icon = L.icon({
+                            iconUrl: photo,
+                            iconSize: [40, 40],
+                            iconAnchor: [20, 20],
                             className: 'team-logo-style'
                         });
 
-                        const popupContent = `<div style="text-align:center;">
-                            <img src="${photoLink}" onerror="this.src='${ftcLogoUrl}'" style="width:50px; border-radius:50%;"><br>
+                        const popup = `<div style="text-align:center;">
+                            <img src="${photo}" onerror="this.src='${ftcLogo}'" style="width:50px; border-radius:50%;"><br>
                             <b>${name}</b><br>${school}</div>`;
 
-                        L.marker(latLon, {icon: teamIcon}).addTo(map).bindPopup(popupContent);
+                        L.marker(latLon, {icon: icon}).addTo(map).bindPopup(popup);
                     }
                 });
             } catch (e) { console.error(e); }
