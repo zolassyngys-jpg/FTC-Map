@@ -55,10 +55,9 @@
                     const name = columns[1]?.replace(/"/g, '').trim();    
                     const school = columns[2]?.replace(/"/g, '').trim();  
                     const coordsRaw = columns[3]?.replace(/"/g, '').trim(); 
-                    const contactLink = columns[4]?.replace(/"/g, '').trim();
                     let photoLink = columns[5]?.replace(/"/g, '').trim();
 
-                    // ПРОВЕРКА: Если в таблице пусто, ставим лого FTC
+                    // ПРОВЕРКА: Если в таблице пусто (ячейка F), ставим лого FTC
                     if (!photoLink || photoLink.length < 10) {
                         photoLink = defaultLogo;
                     }
