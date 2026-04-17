@@ -6,12 +6,12 @@
     <title>FTC Kazakhstan Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f7f6; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; }
         #map { height: 100vh; width: 100%; }
         .ui-panel {
             position: absolute; top: 20px; left: 20px; z-index: 1000;
             background: white; padding: 15px; border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15); width: 220px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 220px;
         }
         .add-btn {
             display: block; background: #007bff; color: white;
@@ -22,10 +22,10 @@
             border-radius: 50%; border: 2px solid #007bff;
             background: white; object-fit: cover;
         }
-        .contact-btn {
-            display: inline-block; margin-top: 10px; padding: 8px 15px;
+        .contact-link {
+            display: inline-block; margin-top: 10px; padding: 8px 12px;
             background: #007bff; color: white; text-decoration: none;
-            border-radius: 6px; font-size: 12px; font-weight: 600;
+            border-radius: 6px; font-size: 12px; font-weight: bold;
         }
     </style>
 </head>
@@ -40,67 +40,65 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. СРАЗУ задаем константу логотипа
-        const FTC_LOGO = 'https://raw.githubusercontent.com/FIRST-Tech-Challenge/ftc_app/master/doc/images/ftc_logo.png';
+        // Твоя новая константа с роботом
+        const ROBOT_ICON = 'https://cdn-icons-png.flaticon.com/512/4712/4712139.png';
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjtR3gDUmiRfsiFki23ufThV69yij-sSlcfG1-CATeDHyAhpcH2bgEPcWz9H-0hy5Ge2p9E422f-BR/pub?gid=390633659&single=true&output=csv';
 
         var map = L.map('map').setView([48.0196, 66.9237], 5);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        async function loadTeams() {
+        async function loadData() {
             try {
-                const resp = await fetch(CSV_URL + '&cache=' + Date.now());
-                const csvText = await resp.text();
-                const lines = csvText.split('\n').slice(1);
+                const response = await fetch(CSV_URL + '&t=' + Date.now());
+                const text = await response.text();
+                const rows = text.split('\n').slice(1);
 
-                lines.forEach(line => {
-                    const cell = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/"/g, '').trim());
-                    
-                    if (cell.length < 4) return;
+                rows.forEach(row => {
+                    const col = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/"/g, '').trim());
+                    if (col.length < 4) return;
 
-                    const teamName = cell[1];
-                    const schoolInfo = cell[2];
-                    const coords = cell[3];
-                    const social = cell[4];
-                    const photoFromTable = cell[5];
+                    const name = col[1];
+                    const school = col[2];
+                    const coords = col[3];
+                    const social = col[4]; // Колонка E
+                    const photo = col[5];  // Колонка F
 
                     if (coords && coords.includes(',')) {
-                        const point = coords.split(',').map(Number);
+                        const pos = coords.split(',').map(Number);
 
-                        // ЛОГИКА: Сначала берем базовый лого, а если в таблице есть ссылка — меняем на неё
-                        let finalIconUrl = FTC_LOGO;
-                        if (photoFromTable && photoFromTable.startsWith('http') && photoFromTable.length > 15) {
-                            finalIconUrl = photoFromTable;
+                        // СНАЧАЛА робот, потом замена на фото из таблицы если оно есть
+                        let finalImg = ROBOT_ICON;
+                        if (photo && photo.startsWith('http') && photo.length > 15) {
+                            finalImg = photo;
                         }
 
-                        const customIcon = L.icon({
-                            iconUrl: finalIconUrl,
+                        const icon = L.icon({
+                            iconUrl: finalImg,
                             iconSize: [40, 40],
                             iconAnchor: [20, 20],
                             className: 'team-logo-circle'
                         });
 
-                        // Кнопка связи (только если есть ссылка)
-                        let socialHtml = '';
+                        // Возвращаем кнопку "Связаться"
+                        let btn = '';
                         if (social && social.startsWith('http')) {
-                            socialHtml = `<br><a href="${social}" target="_blank" class="contact-btn">Связаться</a>`;
+                            btn = `<br><a href="${social}" target="_blank" class="contact-link">Связаться</a>`;
                         }
 
-                        const popupHtml = `
+                        const content = `
                             <div style="text-align:center;">
-                                <img src="${finalIconUrl}" onerror="this.src='${FTC_LOGO}'" style="width:50px; border-radius:50%;"><br>
-                                <b style="font-size:14px;">${teamName}</b><br>
-                                <small style="color:gray;">${schoolInfo}</small>
-                                ${socialHtml}
+                                <img src="${finalImg}" onerror="this.src='${ROBOT_ICON}'" style="width:50px; border-radius:50%;"><br>
+                                <b>${name}</b><br><small>${school}</small>
+                                ${btn}
                             </div>
                         `;
 
-                        L.marker(point, {icon: customIcon}).addTo(map).bindPopup(popupHtml);
+                        L.marker(pos, {icon: icon}).addTo(map).bindPopup(content);
                     }
                 });
-            } catch (err) { console.error("Data error:", err); }
+            } catch (err) { console.error(err); }
         }
-        loadTeams();
+        loadData();
     </script>
 </body>
 </html>
