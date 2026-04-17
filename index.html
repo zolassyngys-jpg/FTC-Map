@@ -1,68 +1,107 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>FTC KAZAKHSTAN MAP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FTC Kazakhstan Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; background: #000; font-family: sans-serif; }
-        #map { height: 100vh; width: 100%; }
-        .logo-style { 
+        :root { --ftc-orange: #ff8c00; --primary: #007bff; --glass: rgba(15, 15, 20, 0.9); }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: #000; overflow: hidden; }
+        #map { height: 100vh; width: 100%; background: #0b0e11; }
+        
+        .border-line { position: absolute; left: 0; width: 100%; height: 8px; background: var(--ftc-orange); z-index: 2000; }
+        .top-line { top: 0; } .bottom-line { bottom: 0; }
+
+        .corner-info { position: absolute; z-index: 2000; top: 20px; padding: 10px 20px; background: var(--glass); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 10px; font-family: 'Orbitron', sans-serif; color: white; }
+        .left-top { left: 20px; color: var(--primary); font-size: 18px; border-left: 4px solid var(--primary); }
+        .right-top { right: 20px; text-align: right; border-right: 4px solid var(--ftc-orange); }
+
+        .ui-panel { position: absolute; bottom: 40px; left: 20px; z-index: 1000; background: var(--glass); backdrop-filter: blur(12px); padding: 20px; border-radius: 15px; width: 260px; border: 1px solid rgba(255,255,255,0.1); color: white; }
+        .add-btn { display: block; background: var(--primary); color: white; text-align: center; padding: 10px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 15px 0; transition: 0.3s; font-size: 14px; }
+        .author-tag { font-size: 9px; color: #666; font-family: 'Orbitron', sans-serif; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; }
+
+        /* Этот стиль делает ЛЮБОЕ фото (jpg/png) круглым и красивым */
+        .team-logo-marker { 
             border-radius: 50% !important; 
-            border: 2px solid #007bff !important; 
+            border: 2px solid var(--primary) !important; 
             background: white !important;
-            object-fit: cover !important;
+            object-fit: cover !important; /* Важно: не дает картинке растягиваться */
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
         }
     </style>
 </head>
 <body>
+    <div class="border-line top-line"></div>
+    <div class="corner-info left-top">FTC KAZAKHSTAN</div>
+    <div class="corner-info right-top"><div style="font-size: 14px; color: var(--ftc-orange);">COMMUNITY MAP</div><div style="font-size: 10px;">v2.0 Full</div></div>
+
+    <div class="ui-panel">
+        <h3 style="margin:0; font-family: 'Orbitron'; font-size: 16px;">МЕНЮ</h3>
+        <p style="font-size: 12px; color: #aaa; margin: 8px 0;">Все команды на одной карте</p>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSeZcpo7Ga7OBPJLRLbIJNaTGKCAFy2l3x4N6_HaUueAWWgLjg/viewform" target="_blank" class="add-btn">Добавить команду</a>
+        <div class="author-tag">SYSTEM BY CHINA</div>
+    </div>
+
     <div id="map"></div>
+    <div class="border-line bottom-line"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. Создаем карту
-        const map = L.map('map').setView([48.0196, 66.9237], 5);
+        const map = L.map('map', { zoomControl: false, minZoom: 4 }).setView([48.0196, 66.9237], 5);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // 2. Ссылки (ПРОВЕРЬ ИХ)
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjtR3gDUmiRfsiFki23ufThV69yij-sSlcfG1-CATeDHyAhpcH2bgEPcWz9H-0hy5Ge2p9E422f-BR/pub?gid=390633659&single=true&output=csv&v=' + Math.random();
-        const MY_LOGO = "https://raw.githubusercontent.com/zolassynqys-jpg/FTC-Map/main/logo.jpg.jpg";
+        // Ссылка на таблицу с защитой от кэша
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjtR3gDUmiRfsiFki23ufThV69yij-sSlcfG1-CATeDHyAhpcH2bgEPcWz9H-0hy5Ge2p9E422f-BR/pub?gid=390633659&single=true&output=csv&v=' + Date.now();
+        const DEFAULT_ICON = 'https://cdn-icons-png.flaticon.com/512/4712/4712139.png';
 
-        async function loadData() {
+        async function loadTeams() {
             try {
-                const res = await fetch(CSV_URL);
-                const text = await res.text();
-                const lines = text.split('\n').slice(1);
+                const response = await fetch(CSV_URL);
+                const data = await response.text();
+                const rows = data.split('\n').slice(1);
 
-                lines.forEach(line => {
-                    const col = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/"/g, '').trim());
+                rows.forEach(row => {
+                    const col = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/"/g, '').trim());
                     if (col.length < 4) return;
 
-                    let [id, name, school, coords, social, photo] = col;
-
-                    // Если это твоя команда - ставим лого из Гитхаба без вариантов
-                    if (name.toLowerCase().includes("y tech") || name.toLowerCase().includes("y-tech")) {
-                        photo = MY_LOGO;
-                    }
+                    let [timestamp, name, school, coords, social, photo] = col;
 
                     if (coords && coords.includes(',')) {
                         const pos = coords.split(',').map(Number);
-                        const img = (photo && photo.startsWith('http')) ? photo : 'https://cdn-icons-png.flaticon.com/512/4712/4712139.png';
+                        
+                        // Если ссылки нет - ставим дефолт. Если есть - она будет круглой.
+                        let imgUrl = (photo && photo.startsWith('http')) ? photo : DEFAULT_ICON;
 
+                        // Создаем иконку (принимает любой JPG/PNG)
                         const icon = L.icon({
-                            iconUrl: img,
-                            iconSize: [40, 40],
-                            iconAnchor: [20, 20],
-                            className: 'logo-style'
+                            iconUrl: imgUrl,
+                            iconSize: [42, 42],
+                            iconAnchor: [21, 21],
+                            className: 'team-logo-marker'
                         });
 
-                        L.marker(pos, {icon: icon}).addTo(map)
-                         .bindPopup(`<b>${name}</b><br><img src="${img}" style="width:80px; height:80px; border-radius:50%; object-fit:cover;">`);
+                        const popupHtml = `
+                            <div style="text-align:center; min-width: 150px; font-family: 'Inter', sans-serif;">
+                                <div style="width: 70px; height: 70px; margin: 0 auto 10px; border-radius: 50%; overflow: hidden; border: 2px solid #007bff; background: #fff;">
+                                    <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>
+                                <b style="font-size:15px; color:#333; display:block; margin-bottom:2px;">${name}</b>
+                                <div style="font-size:11px; color:#666; margin-bottom:10px;">${school}</div>
+                                ${(social && social.startsWith('http')) ? 
+                                `<a href="${social}" target="_blank" style="display:inline-block; background:#007bff; color:white; padding:6px 15px; border-radius:6px; text-decoration:none; font-size:11px; font-weight:bold;">CONTACT</a>` 
+                                : ''}
+                            </div>
+                        `;
+
+                        L.marker(pos, { icon: icon }).addTo(map).bindPopup(popupHtml);
                     }
                 });
-            } catch (e) { console.error("Ошибка:", e); }
+            } catch (err) { console.error("Ошибка:", err); }
         }
-        loadData();
+        loadTeams();
     </script>
 </body>
 </html>
