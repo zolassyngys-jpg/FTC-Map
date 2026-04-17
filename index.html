@@ -18,84 +18,85 @@
             text-align: center; padding: 10px; text-decoration: none;
             border-radius: 8px; font-weight: bold; margin-top: 10px;
         }
-        /* Стиль круглых иконок */
-        .team-logo-custom {
+        .team-logo-circle {
             border-radius: 50%; border: 2px solid #007bff;
             background: white; object-fit: cover;
         }
-        .contact-btn {
-            display: inline-block; margin-top: 10px; padding: 8px 15px;
-            background: #e7f3ff; color: #007bff; text-decoration: none;
-            border-radius: 8px; font-size: 13px; font-weight: bold;
+        .contact-link {
+            display: inline-block; margin-top: 10px; padding: 8px 12px;
+            background: #007bff; color: white; text-decoration: none;
+            border-radius: 6px; font-size: 12px; font-weight: bold;
         }
     </style>
 </head>
 <body>
+
     <div class="ui-panel">
         <h2 style="margin:0; font-size:18px;">FTC KZ MAP</h2>
         <a href="https://docs.google.com/forms/d/e/1FAIpQLSeZcpo7Ga7OBPJLRLbIJNaTGKCAFy2l3x4N6_HaUueAWWgLjg/viewform" target="_blank" class="add-btn">Добавить команду</a>
     </div>
+
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // --- КОНСТАНТЫ ---
+        const DEFAULT_LOGO = 'https://raw.githubusercontent.com/FIRST-Tech-Challenge/ftc_app/master/doc/images/ftc_logo.png';
+        const TABLE_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjtR3gDUmiRfsiFki23ufThV69yij-sSlcfG1-CATeDHyAhpcH2bgEPcWz9H-0hy5Ge2p9E422f-BR/pub?gid=390633659&single=true&output=csv';
+
         var map = L.map('map').setView([48.0196, 66.9237], 5);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // Лого FTC по умолчанию
-        const defaultLogo = 'https://raw.githubusercontent.com/FIRST-Tech-Challenge/ftc_app/master/doc/images/ftc_logo.png';
-        const table_url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjtR3gDUmiRfsiFki23ufThV69yij-sSlcfG1-CATeDHyAhpcH2bgEPcWz9H-0hy5Ge2p9E422f-BR/pub?gid=390633659&single=true&output=csv';
-
-        async function loadTeams() {
+        async function loadData() {
             try {
-                const response = await fetch(table_url + '&t=' + Date.now());
-                const data = await response.text();
-                const rows = data.split('\n').slice(1); 
+                const response = await fetch(TABLE_CSV + '&cache=' + Date.now());
+                const text = await response.text();
+                const rows = text.split('\n').slice(1);
 
                 rows.forEach(row => {
-                    // Чистим данные от кавычек
-                    const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim());
+                    const col = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/"/g, '').trim());
                     
-                    if (columns.length < 4) return;
+                    if (col.length < 4) return;
 
-                    const name = columns[1];    
-                    const school = columns[2];  
-                    const coordsRaw = columns[3]; 
-                    const socialLink = columns[4]; // Колонка E
-                    const photo = columns[5];      // Колонка F
+                    const name = col[1];
+                    const school = col[2];
+                    const coords = col[3];
+                    const link = col[4]; // Колонка E (Связаться)
+                    const photo = col[5]; // Колонка F (Лого)
 
-                    if (coordsRaw && coordsRaw.includes(',')) {
-                        const latLon = coordsRaw.split(',').map(item => parseFloat(item.trim()));
-                        
-                        // Если фото пустое или равно "FTC", ставим стандартное лого
-                        let finalPhoto = (photo && photo.length > 5 && photo.startsWith('http')) ? photo : defaultLogo;
+                    if (coords && coords.includes(',')) {
+                        const pos = coords.split(',').map(Number);
 
-                        const teamIcon = L.icon({
-                            iconUrl: finalPhoto,
+                        // ПРОВЕРКА ЛОГОТИПА: Если в таблице пусто или короткий текст типа "FTC"
+                        let finalImg = (photo && photo.startsWith('http')) ? photo : DEFAULT_LOGO;
+
+                        const icon = L.icon({
+                            iconUrl: finalImg,
                             iconSize: [40, 40],
                             iconAnchor: [20, 20],
-                            className: 'team-logo-custom'
+                            className: 'team-logo-circle'
                         });
 
-                        // Проверяем наличие ссылки для кнопки
-                        let contactBtn = '';
-                        if (socialLink && socialLink.startsWith('http')) {
-                            contactBtn = `<br><a href="${socialLink}" target="_blank" class="contact-btn">Связаться</a>`;
+                        // КНОПКА СВЯЗАТЬСЯ: Создаем только если ссылка начинается на http
+                        let btnHtml = '';
+                        if (link && link.startsWith('http')) {
+                            btnHtml = `<br><a href="${link}" target="_blank" class="contact-link">Связаться</a>`;
                         }
 
-                        const popup = `<div style="text-align:center; min-width:150px;">
-                            <img src="${finalPhoto}" onerror="this.src='${defaultLogo}'" style="width:50px; height:50px; border-radius:50%; object-fit:cover;"><br>
-                            <b style="font-size:16px;">${name}</b><br>
-                            <span style="color:gray;">${school}</span>
-                            ${contactBtn}
-                        </div>`;
+                        const content = `
+                            <div style="text-align:center;">
+                                <img src="${finalImg}" onerror="this.src='${DEFAULT_LOGO}'" style="width:50px; border-radius:50%;"><br>
+                                <b>${name}</b><br><small>${school}</small>
+                                ${btnHtml}
+                            </div>
+                        `;
 
-                        L.marker(latLon, {icon: teamIcon}).addTo(map).bindPopup(popup);
+                        L.marker(pos, {icon: icon}).addTo(map).bindPopup(content);
                     }
                 });
-            } catch (e) { console.error("Ошибка:", e); }
+            } catch (err) { console.error(err); }
         }
-        loadTeams();
+        loadData();
     </script>
 </body>
 </html>
