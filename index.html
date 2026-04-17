@@ -6,102 +6,69 @@
     <title>FTC Kazakhstan Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; }
         #map { height: 100vh; width: 100%; }
-        
-        /* Панель управления слева */
         .ui-panel {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-            background: white;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            width: 220px;
+            position: absolute; top: 20px; left: 20px; z-index: 1000;
+            background: white; padding: 15px; border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 220px;
         }
-
         .add-btn {
-            display: block;
-            background: #007bff;
-            color: white;
-            text-align: center;
-            padding: 10px;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-            margin-top: 10px;
-            transition: 0.3s;
+            display: block; background: #007bff; color: white;
+            text-align: center; padding: 10px; text-decoration: none;
+            border-radius: 8px; font-weight: bold; margin-top: 10px;
         }
-
-        .add-btn:hover { background: #0056b3; }
-
-        /* Стиль для круглых логотипов команд на карте */
         .team-logo-custom {
-            border-radius: 50%;
-            border: 2px solid #007bff;
-            background: white;
-            object-fit: contain;
+            border-radius: 50%; border: 2px solid #007bff;
+            background: white; object-fit: contain;
+        }
+        .contact-btn {
+            display: inline-block; margin-top: 8px; padding: 5px 10px;
+            background: #f0f2f5; color: #007bff; text-decoration: none;
+            border-radius: 5px; font-size: 12px; font-weight: bold;
         }
     </style>
 </head>
 <body>
-
     <div class="ui-panel">
-        <h2 style="margin:0; font-size:18px; color:#333;">FTC KZ MAP</h2>
-        <p style="font-size:12px; color:#666; margin: 5px 0;">Карта команд Казахстана</p>
+        <h2 style="margin:0; font-size:18px;">FTC KZ MAP</h2>
         <a href="https://docs.google.com/forms/d/e/1FAIpQLSeZcpo7Ga7OBPJLRLbIJNaTGKCAFy2l3x4N6_HaUueAWWgLjg/viewform" target="_blank" class="add-btn">Добавить команду</a>
     </div>
-
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
     <script>
-        // Настройка центра карты (Казахстан)
         var map = L.map('map').setView([48.0196, 66.9237], 5);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // Светлая тема карты
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
-        // Ссылка на лого FTC по умолчанию
         const ftcLogoDefault = 'https://raw.githubusercontent.com/FIRST-Tech-Challenge/ftc_app/master/doc/images/ftc_logo.png';
-        
-        // Твоя ссылка на CSV из Google Таблицы
         const table_url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjtR3gDUmiRfsiFki23ufThV69yij-sSlcfG1-CATeDHyAhpcH2bgEPcWz9H-0hy5Ge2p9E422f-BR/pub?gid=390633659&single=true&output=csv';
 
         async function loadTeams() {
             try {
-                // Загружаем данные, добавляя случайный параметр для сброса кэша
                 const response = await fetch(table_url + '&t=' + Date.now());
                 const data = await response.text();
-                
-                // Разбиваем на строки и убираем заголовок
                 const rows = data.split('\n').slice(1); 
 
                 rows.forEach(row => {
-                    // Разделение строки CSV с учетом запятых внутри кавычек
                     const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                     if (columns.length < 5) return;
 
                     const name = columns[1]?.replace(/"/g, '').trim();    
                     const school = columns[2]?.replace(/"/g, '').trim();  
                     const coordsRaw = columns[3]?.replace(/"/g, '').trim(); 
+                    const socialLink = columns[4]?.replace(/"/g, '').trim(); // Ссылка на соцсети
                     let photo = columns[5]?.replace(/"/g, '').trim();
 
                     if (coordsRaw && coordsRaw.includes(',')) {
                         const latLon = coordsRaw.split(',').map(item => parseFloat(item.trim()));
                         
-                        // Логика выбора иконки
+                        // Авто-заполнение: если пусто или написано FTC — ставим дефолтное лого
                         let finalPhoto = photo;
                         if (!photo || photo.toUpperCase() === "FTC" || !photo.startsWith('http')) {
                             finalPhoto = ftcLogoDefault;
                         }
 
-                        // Создаем маркер с логотипом
                         const teamIcon = L.icon({
                             iconUrl: finalPhoto,
                             iconSize: [40, 40],
@@ -109,25 +76,24 @@
                             className: 'team-logo-custom'
                         });
 
-                        // Содержимое всплывающего окна
-                        const popupContent = `
-                            <div style="text-align:center; min-width:120px;">
-                                <img src="${finalPhoto}" onerror="this.src='${ftcLogoDefault}'" style="width:50px; border-radius:50%; margin-bottom:5px;"><br>
-                                <b style="font-size:14px;">${name}</b><br>
-                                <span style="font-size:12px; color:#666;">${school}</span>
-                            </div>
-                        `;
+                        // Формируем кнопку связи, если ссылка есть
+                        let contactMarkup = '';
+                        if (socialLink && socialLink.startsWith('http')) {
+                            const label = socialLink.includes('t.me') ? 'Telegram' : 'Instagram';
+                            contactMarkup = `<br><a href="${socialLink}" target="_blank" class="contact-btn">Связаться (${label})</a>`;
+                        }
 
-                        L.marker(latLon, {icon: teamIcon})
-                            .addTo(map)
-                            .bindPopup(popupContent);
+                        const popup = `<div style="text-align:center;">
+                            <img src="${finalPhoto}" style="width:50px; border-radius:50%; margin-bottom:5px;"><br>
+                            <b>${name}</b><br>${school}
+                            ${contactMarkup}
+                        </div>`;
+
+                        L.marker(latLon, {icon: teamIcon}).addTo(map).bindPopup(popup);
                     }
                 });
-            } catch (error) {
-                console.error('Ошибка загрузки данных:', error);
-            }
+            } catch (e) { console.error(e); }
         }
-
         loadTeams();
     </script>
 </body>
