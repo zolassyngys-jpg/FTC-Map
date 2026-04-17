@@ -8,51 +8,57 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --ftc-red: #ed1c24;
-            --ftc-cream: #f5f5dc;
+            --ftc-orange: #ff8c00; /* Оранжевый цвет для линий */
             --primary: #007bff;
-            --glass: rgba(15, 15, 20, 0.85);
+            --glass: rgba(15, 15, 20, 0.9);
         }
 
         body { margin: 0; font-family: 'Inter', sans-serif; background: #000; overflow: hidden; }
         #map { height: 100vh; width: 100%; background: #0b0e11; }
 
-        /* Красно-молочные линии */
+        /* Толстые сплошные оранжевые линии */
         .border-line {
-            position: absolute; left: 0; width: 100%; height: 6px;
-            background: repeating-linear-gradient(90deg, var(--ftc-red), var(--ftc-red) 50px, var(--ftc-cream) 50px, var(--ftc-cream) 100px);
-            z-index: 2000; box-shadow: 0 0 15px rgba(237, 28, 36, 0.4);
+            position: absolute; left: 0; width: 100%; height: 10px; /* Сделал толще */
+            background: var(--ftc-orange);
+            z-index: 2000; 
+            box-shadow: 0 0 20px rgba(255, 140, 0, 0.5);
         }
         .top-line { top: 0; }
         .bottom-line { bottom: 0; }
 
-        /* Инфо-бары в углах */
+        /* Инфо-бары */
         .corner-info {
-            position: absolute; z-index: 2000; top: 15px;
-            padding: 10px 20px; background: var(--glass);
+            position: absolute; z-index: 2000; top: 25px;
+            padding: 12px 25px; background: var(--glass);
             border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px); border-radius: 10px;
+            backdrop-filter: blur(10px); border-radius: 12px;
             font-family: 'Orbitron', sans-serif; color: white;
         }
-        .left-top { left: 20px; color: var(--primary); font-size: 18px; border-left: 4px solid var(--primary); }
-        .right-top { right: 20px; text-align: right; border-right: 4px solid var(--ftc-red); }
+        .left-top { left: 25px; color: var(--primary); font-size: 20px; border-left: 5px solid var(--primary); }
+        .right-top { right: 25px; text-align: right; border-right: 5px solid var(--ftc-orange); }
 
-        /* Основная панель */
+        /* Панель управления */
         .ui-panel {
-            position: absolute; bottom: 40px; left: 20px; z-index: 1000;
+            position: absolute; bottom: 50px; left: 25px; z-index: 1000;
             background: var(--glass); backdrop-filter: blur(12px);
-            padding: 20px; border-radius: 15px; width: 240px;
+            padding: 22px; border-radius: 18px; width: 250px;
             border: 1px solid rgba(255,255,255,0.1); color: white;
         }
         .add-btn {
             display: block; background: var(--primary); color: white;
-            text-align: center; padding: 10px; text-decoration: none;
-            border-radius: 8px; font-weight: bold; margin-top: 10px;
+            text-align: center; padding: 12px; text-decoration: none;
+            border-radius: 10px; font-weight: bold; margin: 15px 0;
             transition: 0.3s;
         }
-        .add-btn:hover { filter: brightness(1.2); transform: scale(1.02); }
+        .add-btn:hover { filter: brightness(1.2); transform: translateY(-2px); }
 
-        /* Маркеры */
+        /* Подпись автора */
+        .author-tag {
+            font-size: 10px; color: #777; font-family: 'Orbitron', sans-serif;
+            text-align: center; border-top: 1px solid rgba(255,255,255,0.05);
+            padding-top: 10px; letter-spacing: 1px;
+        }
+
         .team-logo-marker {
             border-radius: 50%; border: 2px solid var(--primary);
             background: white; box-shadow: 0 0 15px var(--primary);
@@ -65,14 +71,16 @@
     
     <div class="corner-info left-top">FTC</div>
     <div class="corner-info right-top">
-        <div style="font-size: 14px; color: var(--ftc-red);">Y tech</div>
-        <div style="font-size: 10px; letter-spacing: 1px;">#29112</div>
+        <div style="font-size: 16px; color: var(--ftc-orange);">Y tech</div>
+        <div style="font-size: 11px; letter-spacing: 1px;">#29112</div>
     </div>
 
     <div class="ui-panel">
-        <h3 style="margin:0; font-family: 'Orbitron'; font-size: 14px;">TEAM LOCATOR</h3>
-        <p style="font-size: 11px; color: #aaa;">Найди союзников по всему Казахстану</p>
-        <a href="https://docs.google.com/forms/d/e/1FAIpQLSeZcpo7Ga7OBPJLRLbIJNaTGKCAFy2l3x4N6_HaUueAWWgLjg/viewform" target="_blank" class="add-btn">Вступить в базу</a>
+        <h3 style="margin:0; font-family: 'Orbitron'; font-size: 15px;">TEAM LOCATOR</h3>
+        <p style="font-size: 12px; color: #aaa; margin: 8px 0;">Карта FTC сообщества Казахстана</p>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSeZcpo7Ga7OBPJLRLbIJNaTGKCAFy2l3x4N6_HaUueAWWgLjg/viewform" target="_blank" class="add-btn">Добавить команду</a>
+        
+        <div class="author-tag">by Y tech #29112</div>
     </div>
 
     <div id="map"></div>
@@ -80,16 +88,12 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Границы Казахстана, чтобы карта не уходила далеко
-        const kzBounds = L.latLngBounds(
-            L.latLng(40.0, 45.0), // Юго-запад
-            L.latLng(56.0, 88.0)  // Северо-восток
-        );
+        const kzBounds = L.latLngBounds(L.latLng(40.0, 45.0), L.latLng(56.0, 88.0));
 
         const map = L.map('map', {
             zoomControl: false,
-            maxBounds: kzBounds,      // Ограничиваем область
-            maxBoundsViscosity: 1.0,  // "Упругость" границ
+            maxBounds: kzBounds,
+            maxBoundsViscosity: 1.0,
             minZoom: 4
         }).setView([48.0196, 66.9237], 5);
 
@@ -123,10 +127,10 @@
                         });
 
                         const popupHtml = `
-                            <div style="text-align:center; color: #333;">
-                                <img src="${imgUrl}" onerror="this.src='${DEFAULT_ROBOT}'" style="width:40px; border-radius:50%; border:2px solid var(--primary);"><br>
-                                <b>${name}</b><br><small>${school}</small>
-                                ${(social && social.startsWith('http')) ? `<br><a href="${social}" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:bold;">Instagram/TG</a>` : ''}
+                            <div style="text-align:center; padding: 5px;">
+                                <img src="${imgUrl}" onerror="this.src='${DEFAULT_ROBOT}'" style="width:45px; border-radius:50%; border:2px solid #007bff;"><br>
+                                <b style="font-size:14px;">${name}</b><br><small>${school}</small>
+                                ${(social && social.startsWith('http')) ? `<br><a href="${social}" target="_blank" style="color:#007bff; text-decoration:none; font-weight:bold; font-size:11px;">CONTACT TEAM</a>` : ''}
                             </div>
                         `;
 
