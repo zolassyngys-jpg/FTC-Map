@@ -29,36 +29,37 @@
 <body>
     <div class="ui-panel">
         <h2 style="margin:0; font-size:18px;">FTC KZ MAP</h2>
+        <p style="font-size: 12px; color: #666; margin: 5px 0;">Карта команд Казахстана</p>
         <a href="https://docs.google.com/forms/d/e/1FAIpQLSeZcpo7Ga7OBPJLRLbIJNaTGKCAFy2l3x4N6_HaUueAWWgLjg/viewform" target="_blank" class="add-btn">Добавить команду</a>
     </div>
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        var map = L.map('map').setView([48.0196, 66.9237], 5);
+        var map = L.map('map').setView([43.2389, 76.8897], 11); // Центр на Алматы
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // Ссылка на логотип FTC по умолчанию
         const defaultLogo = 'https://raw.githubusercontent.com/FIRST-Tech-Challenge/ftc_app/master/doc/images/ftc_logo.png';
         const table_url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjtR3gDUmiRfsiFki23ufThV69yij-sSlcfG1-CATeDHyAhpcH2bgEPcWz9H-0hy5Ge2p9E422f-BR/pub?gid=390633659&single=true&output=csv';
 
         async function loadTeams() {
             try {
-                const response = await fetch(table_url + '&cachebust=' + new Date().getTime());
+                const response = await fetch(table_url + '&cache=' + new Date().getTime());
                 const data = await response.text();
                 const rows = data.split('\n').slice(1); 
 
                 rows.forEach(row => {
+                    // Правильное разделение CSV с учетом кавычек
                     const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                    if (columns.length < 4) return;
+                    if (columns.length < 5) return;
 
                     const name = columns[1]?.replace(/"/g, '').trim();    
                     const school = columns[2]?.replace(/"/g, '').trim();  
                     const coordsRaw = columns[3]?.replace(/"/g, '').trim(); 
                     let photoLink = columns[5]?.replace(/"/g, '').trim();
 
-                    // ПРОВЕРКА: Если в таблице пусто (ячейка F), ставим лого FTC
-                    if (!photoLink || photoLink.length < 10) {
+                    // ПРОВЕРКА: Если в таблице пусто или ссылка слишком короткая
+                    if (!photoLink || photoLink === "" || photoLink.length < 5) {
                         photoLink = defaultLogo;
                     }
 
@@ -68,19 +69,20 @@
                         const teamIcon = L.icon({
                             iconUrl: photoLink,
                             iconSize: [40, 40],
+                            iconAnchor: [20, 20],
                             className: 'team-logo-style'
                         });
 
                         const popupContent = `
                             <div style="text-align:center;">
-                                <img src="${photoLink}" onerror="this.src='${defaultLogo}'" style="width:50px; border-radius:50%;"><br>
-                                <b>${name}</b><br>${school}
+                                <img src="${photoLink}" onerror="this.src='${defaultLogo}'" style="width:50px; border-radius:50%; margin-bottom:5px;"><br>
+                                <b>${name}</b><br><small>${school}</small>
                             </div>`;
 
                         L.marker(latLon, {icon: teamIcon}).addTo(map).bindPopup(popupContent);
                     }
                 });
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Ошибка загрузки:", e); }
         }
         loadTeams();
     </script>
