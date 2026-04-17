@@ -18,14 +18,15 @@
             text-align: center; padding: 10px; text-decoration: none;
             border-radius: 8px; font-weight: bold; margin-top: 10px;
         }
+        /* Стиль круглых иконок */
         .team-logo-custom {
             border-radius: 50%; border: 2px solid #007bff;
-            background: white; object-fit: contain;
+            background: white; object-fit: cover;
         }
         .contact-btn {
-            display: inline-block; margin-top: 8px; padding: 5px 10px;
-            background: #f0f2f5; color: #007bff; text-decoration: none;
-            border-radius: 5px; font-size: 12px; font-weight: bold;
+            display: inline-block; margin-top: 10px; padding: 8px 15px;
+            background: #e7f3ff; color: #007bff; text-decoration: none;
+            border-radius: 8px; font-size: 13px; font-weight: bold;
         }
     </style>
 </head>
@@ -41,7 +42,8 @@
         var map = L.map('map').setView([48.0196, 66.9237], 5);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        const ftcLogoDefault = 'https://raw.githubusercontent.com/FIRST-Tech-Challenge/ftc_app/master/doc/images/ftc_logo.png';
+        // Лого FTC по умолчанию
+        const defaultLogo = 'https://raw.githubusercontent.com/FIRST-Tech-Challenge/ftc_app/master/doc/images/ftc_logo.png';
         const table_url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjtR3gDUmiRfsiFki23ufThV69yij-sSlcfG1-CATeDHyAhpcH2bgEPcWz9H-0hy5Ge2p9E422f-BR/pub?gid=390633659&single=true&output=csv';
 
         async function loadTeams() {
@@ -51,23 +53,22 @@
                 const rows = data.split('\n').slice(1); 
 
                 rows.forEach(row => {
-                    const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                    if (columns.length < 5) return;
+                    // Чистим данные от кавычек
+                    const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim());
+                    
+                    if (columns.length < 4) return;
 
-                    const name = columns[1]?.replace(/"/g, '').trim();    
-                    const school = columns[2]?.replace(/"/g, '').trim();  
-                    const coordsRaw = columns[3]?.replace(/"/g, '').trim(); 
-                    const socialLink = columns[4]?.replace(/"/g, '').trim(); // Ссылка на соцсети
-                    let photo = columns[5]?.replace(/"/g, '').trim();
+                    const name = columns[1];    
+                    const school = columns[2];  
+                    const coordsRaw = columns[3]; 
+                    const socialLink = columns[4]; // Колонка E
+                    const photo = columns[5];      // Колонка F
 
                     if (coordsRaw && coordsRaw.includes(',')) {
                         const latLon = coordsRaw.split(',').map(item => parseFloat(item.trim()));
                         
-                        // Авто-заполнение: если пусто или написано FTC — ставим дефолтное лого
-                        let finalPhoto = photo;
-                        if (!photo || photo.toUpperCase() === "FTC" || !photo.startsWith('http')) {
-                            finalPhoto = ftcLogoDefault;
-                        }
+                        // Если фото пустое или равно "FTC", ставим стандартное лого
+                        let finalPhoto = (photo && photo.length > 5 && photo.startsWith('http')) ? photo : defaultLogo;
 
                         const teamIcon = L.icon({
                             iconUrl: finalPhoto,
@@ -76,23 +77,23 @@
                             className: 'team-logo-custom'
                         });
 
-                        // Формируем кнопку связи, если ссылка есть
-                        let contactMarkup = '';
+                        // Проверяем наличие ссылки для кнопки
+                        let contactBtn = '';
                         if (socialLink && socialLink.startsWith('http')) {
-                            const label = socialLink.includes('t.me') ? 'Telegram' : 'Instagram';
-                            contactMarkup = `<br><a href="${socialLink}" target="_blank" class="contact-btn">Связаться (${label})</a>`;
+                            contactBtn = `<br><a href="${socialLink}" target="_blank" class="contact-btn">Связаться</a>`;
                         }
 
-                        const popup = `<div style="text-align:center;">
-                            <img src="${finalPhoto}" style="width:50px; border-radius:50%; margin-bottom:5px;"><br>
-                            <b>${name}</b><br>${school}
-                            ${contactMarkup}
+                        const popup = `<div style="text-align:center; min-width:150px;">
+                            <img src="${finalPhoto}" onerror="this.src='${defaultLogo}'" style="width:50px; height:50px; border-radius:50%; object-fit:cover;"><br>
+                            <b style="font-size:16px;">${name}</b><br>
+                            <span style="color:gray;">${school}</span>
+                            ${contactBtn}
                         </div>`;
 
                         L.marker(latLon, {icon: teamIcon}).addTo(map).bindPopup(popup);
                     }
                 });
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Ошибка:", e); }
         }
         loadTeams();
     </script>
