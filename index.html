@@ -2,24 +2,22 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FTC Kazakhstan Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f4f4f4; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; }
         #map { height: 100vh; width: 100%; }
-        
         .ui-panel {
             position: absolute; top: 20px; left: 20px; z-index: 1000;
             background: white; padding: 15px; border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 220px;
         }
-        
         .add-btn {
             display: block; background: #007bff; color: white;
             text-align: center; padding: 10px; text-decoration: none;
             border-radius: 8px; font-weight: bold; margin-top: 10px;
         }
-
         .team-logo-style {
             border-radius: 50%;
             border: 2px solid #007bff;
@@ -29,28 +27,20 @@
     </style>
 </head>
 <body>
-
     <div class="ui-panel">
         <h2 style="margin:0; font-size:18px;">FTC KZ MAP</h2>
-        <p style="font-size: 12px; color: #666;">Карта команд Казахстана</p>
         <a href="https://docs.google.com/forms/d/e/1FAIpQLSeZcpo7Ga7OBPJLRLbIJNaTGKCAFy2l3x4N6_HaUueAWWgLjg/viewform" target="_blank" class="add-btn">Добавить команду</a>
     </div>
-
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         var map = L.map('map').setView([48.0196, 66.9237], 5);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '©OpenStreetMap'
-        }).addTo(map);
-
-        // Твоя ссылка на CSV из Google Таблицы
-        const table_url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjtR3gDUmiRfsiFki23ufThV69yij-sSlcfG1-CATeDHyAhpcH2bgEPcWz9H-0hy5Ge2p9E422f-BR/pub?gid=390633659&single=true&output=csv';
-        
-        // Запасной логотип, если основной не грузится
+        // Ссылка на логотип FTC по умолчанию
         const defaultLogo = 'https://raw.githubusercontent.com/FIRST-Tech-Challenge/ftc_app/master/doc/images/ftc_logo.png';
+        const table_url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjtR3gDUmiRfsiFki23ufThV69yij-sSlcfG1-CATeDHyAhpcH2bgEPcWz9H-0hy5Ge2p9E422f-BR/pub?gid=390633659&single=true&output=csv';
 
         async function loadTeams() {
             try {
@@ -66,46 +56,33 @@
                     const school = columns[2]?.replace(/"/g, '').trim();  
                     const coordsRaw = columns[3]?.replace(/"/g, '').trim(); 
                     const contactLink = columns[4]?.replace(/"/g, '').trim();
-                    const photoLink = columns[5]?.replace(/"/g, '').trim();
+                    let photoLink = columns[5]?.replace(/"/g, '').trim();
+
+                    // ПРОВЕРКА: Если в таблице пусто, ставим лого FTC
+                    if (!photoLink || photoLink.length < 10) {
+                        photoLink = defaultLogo;
+                    }
 
                     if (coordsRaw && coordsRaw.includes(',')) {
                         const latLon = coordsRaw.split(',').map(item => parseFloat(item.trim()));
                         
-                        if (!isNaN(latLon[0]) && !isNaN(latLon[1])) {
-                            // Если в таблице пусто, ставим лого FTC
-                            const finalPhoto = (photoLink && photoLink.length > 10) ? photoLink : defaultLogo;
+                        const teamIcon = L.icon({
+                            iconUrl: photoLink,
+                            iconSize: [40, 40],
+                            className: 'team-logo-style'
+                        });
 
-                            const teamIcon = L.icon({
-                                iconUrl: finalPhoto,
-                                iconSize: [40, 40],
-                                iconAnchor: [20, 20],
-                                popupAnchor: [0, -20],
-                                className: 'team-logo-style'
-                            });
+                        const popupContent = `
+                            <div style="text-align:center;">
+                                <img src="${photoLink}" onerror="this.src='${defaultLogo}'" style="width:50px; border-radius:50%;"><br>
+                                <b>${name}</b><br>${school}
+                            </div>`;
 
-                            let popupContent = `
-                                <div style="text-align:center; min-width:150px;">
-                                    <img src="${finalPhoto}" 
-                                         onerror="this.src='${defaultLogo}'" 
-                                         style="width:60px; height:60px; object-fit:contain; border-radius:50%; margin-bottom:5px;">
-                                    <br><b>${name}</b><br>
-                                    <span style="color:gray; font-size:12px;">${school}</span>
-                            `;
-
-                            if (contactLink && contactLink.length > 5) {
-                                popupContent += `<br><br><a href="${contactLink}" target="_blank" style="background:#007bff; color:white; padding:6px 12px; text-decoration:none; border-radius:6px; display:inline-block; font-size:12px; font-weight:bold;">Связаться</a>`;
-                            }
-                            popupContent += `</div>`;
-
-                            L.marker(latLon, {icon: teamIcon}).addTo(map).bindPopup(popupContent);
-                        }
+                        L.marker(latLon, {icon: teamIcon}).addTo(map).bindPopup(popupContent);
                     }
                 });
-            } catch (error) {
-                console.error("Ошибка загрузки данных:", error);
-            }
+            } catch (e) { console.error(e); }
         }
-
         loadTeams();
     </script>
 </body>
