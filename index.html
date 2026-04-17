@@ -7,157 +7,92 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --ftc-orange: #ff8c00;
-            --primary: #007bff;
-            --glass: rgba(15, 15, 20, 0.9);
-        }
-
+        :root { --ftc-orange: #ff8c00; --primary: #007bff; --glass: rgba(15, 15, 20, 0.9); }
         body { margin: 0; font-family: 'Inter', sans-serif; background: #000; overflow: hidden; }
         #map { height: 100vh; width: 100%; background: #0b0e11; }
-
-        /* Оранжевые линии сверху и снизу */
-        .border-line {
-            position: absolute; left: 0; width: 100%; height: 8px;
-            background: var(--ftc-orange);
-            z-index: 2000; 
-            box-shadow: 0 0 15px rgba(255, 140, 0, 0.4);
-        }
-        .top-line { top: 0; }
-        .bottom-line { bottom: 0; }
-
-        /* Инфо-панели в углах */
-        .corner-info {
-            position: absolute; z-index: 2000; top: 20px;
-            padding: 10px 20px; background: var(--glass);
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px); border-radius: 10px;
-            font-family: 'Orbitron', sans-serif; color: white;
-        }
+        .border-line { position: absolute; left: 0; width: 100%; height: 8px; background: var(--ftc-orange); z-index: 2000; }
+        .top-line { top: 0; } .bottom-line { bottom: 0; }
+        .corner-info { position: absolute; z-index: 2000; top: 20px; padding: 10px 20px; background: var(--glass); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 10px; font-family: 'Orbitron', sans-serif; color: white; }
         .left-top { left: 20px; color: var(--primary); font-size: 18px; border-left: 4px solid var(--primary); }
         .right-top { right: 20px; text-align: right; border-right: 4px solid var(--ftc-orange); }
-
-        /* Главная панель управления */
-        .ui-panel {
-            position: absolute; bottom: 40px; left: 20px; z-index: 1000;
-            background: var(--glass); backdrop-filter: blur(12px);
-            padding: 20px; border-radius: 15px; width: 260px;
-            border: 1px solid rgba(255,255,255,0.1); color: white;
-        }
-        .add-btn {
-            display: block; background: var(--primary); color: white;
-            text-align: center; padding: 10px; text-decoration: none;
-            border-radius: 8px; font-weight: bold; margin: 15px 0;
-            transition: 0.3s; font-size: 14px;
-        }
-        .add-btn:hover { background: #0056b3; transform: translateY(-2px); }
-
-        .author-tag {
-            font-size: 9px; color: #666; font-family: 'Orbitron', sans-serif;
-            text-align: center; border-top: 1px solid rgba(255,255,255,0.05);
-            padding-top: 10px; letter-spacing: 1px;
-        }
-
-        /* КРУГЛЫЕ МАРКЕРЫ: Работают даже с обычными JPG */
-        .team-logo-marker {
+        .ui-panel { position: absolute; bottom: 40px; left: 20px; z-index: 1000; background: var(--glass); backdrop-filter: blur(12px); padding: 20px; border-radius: 15px; width: 260px; border: 1px solid rgba(255,255,255,0.1); color: white; }
+        .add-btn { display: block; background: var(--primary); color: white; text-align: center; padding: 10px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 15px 0; transition: 0.3s; font-size: 14px; }
+        .author-tag { font-size: 9px; color: #666; font-family: 'Orbitron', sans-serif; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; }
+        
+        /* Стиль для круглых логотипов */
+        .team-logo-marker { 
             border-radius: 50% !important; 
-            border: 2px solid var(--primary) !important;
+            border: 2px solid var(--primary) !important; 
             background: white !important;
-            box-shadow: 0 0 10px rgba(0, 123, 255, 0.6);
-            object-fit: cover !important; /* Обрезает фото под круг */
+            object-fit: cover !important;
         }
     </style>
 </head>
 <body>
-
     <div class="border-line top-line"></div>
-    
     <div class="corner-info left-top">FTC KAZAKHSTAN</div>
-    <div class="corner-info right-top">
-        <div style="font-size: 14px; color: var(--ftc-orange);">COMMUNITY MAP</div>
-        <div style="font-size: 10px;">v1.2 Stable</div>
-    </div>
-
+    <div class="corner-info right-top"><div style="font-size: 14px; color: var(--ftc-orange);">COMMUNITY MAP</div><div style="font-size: 10px;">v1.3 Build</div></div>
     <div class="ui-panel">
-        <h3 style="margin:0; font-family: 'Orbitron'; font-size: 16px;">МЕНЮ</h3>
-        <p style="font-size: 12px; color: #aaa; margin: 8px 0;">Найди свою команду на карте</p>
+        <h3 style="margin:0; font-family: 'Orbitron';">МЕНЮ</h3>
         <a href="https://docs.google.com/forms/d/e/1FAIpQLSeZcpo7Ga7OBPJLRLbIJNaTGKCAFy2l3x4N6_HaUueAWWgLjg/viewform" target="_blank" class="add-btn">Добавить команду</a>
-        
         <div class="author-tag">SYSTEM BY CHINA</div>
     </div>
-
     <div id="map"></div>
     <div class="border-line bottom-line"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Границы Казахстана, чтобы карта не улетала
-        const kzBounds = L.latLngBounds(L.latLng(40.0, 45.0), L.latLng(56.0, 88.0));
-
-        const map = L.map('map', {
-            zoomControl: false,
-            maxBounds: kzBounds,
-            maxBoundsViscosity: 1.0,
-            minZoom: 4
-        }).setView([48.0196, 66.9237], 5);
-
-        // Темная тема карты
+        const map = L.map('map', { zoomControl: false, minZoom: 4 }).setView([48.0196, 66.9237], 5);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Твоя ссылка на CSV из Google Таблиц
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjtR3gDUmiRfsiFki23ufThV69yij-sSlcfG1-CATeDHyAhpcH2bgEPcWz9H-0hy5Ge2p9E422f-BR/pub?gid=390633659&single=true&output=csv';
+        // ТВОЯ ССЫЛКА НА ТАБЛИЦУ (Добавил cachebust, чтобы данные обновлялись сразу)
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQjtR3gDUmiRfsiFki23ufThV69yij-sSlcfG1-CATeDHyAhpcH2bgEPcWz9H-0hy5Ge2p9E422f-BR/pub?gid=390633659&single=true&output=csv&cachebust=' + Date.now();
         
-        // Картинка-заглушка, если в таблице нет ссылки
-        const DEFAULT_ICON = 'https://cdn-icons-png.flaticon.com/512/4712/4712139.png';
+        // ТВОЯ ПРЯМАЯ ССЫЛКА НА ЛОГОТИП
+        const CHINA_LOGO = "https://raw.githubusercontent.com/zolassynqys-jpg/FTC-Map/main/logo.jpg.jpg";
 
         async function loadTeams() {
             try {
-                const response = await fetch(CSV_URL + '&t=' + Date.now());
+                const response = await fetch(CSV_URL);
                 const data = await response.text();
                 const rows = data.split('\n').slice(1);
 
                 rows.forEach(row => {
-                    // Разбираем строку CSV с учетом запятых внутри кавычек
                     const col = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(s => s.replace(/"/g, '').trim());
                     if (col.length < 4) return;
 
-                    const name = col[1], school = col[2], coords = col[3], social = col[4], photo = col[5];
+                    let [id, name, school, coords, social, photo] = col;
+
+                    // МАГИЯ: Если это твоя команда, берем логотип напрямую из Гитхаба
+                    if (name.toLowerCase().includes("y tech") || name.toLowerCase().includes("y-tech")) {
+                        photo = CHINA_LOGO;
+                    }
 
                     if (coords && coords.includes(',')) {
                         const pos = coords.split(',').map(Number);
-                        
-                        // Если в колонке F есть ссылка, берем её. Если нет — стандартный робот.
-                        let imgUrl = (photo && photo.startsWith('http')) ? photo : DEFAULT_ICON;
+                        const finalImg = (photo && photo.startsWith('http')) ? photo : 'https://cdn-icons-png.flaticon.com/512/4712/4712139.png';
 
-                        // Создаем маркер-иконку
                         const icon = L.icon({
-                            iconUrl: imgUrl,
-                            iconSize: [40, 40],
-                            iconAnchor: [20, 20],
-                            className: 'team-logo-marker' // Магия CSS делает её круглой
+                            iconUrl: finalImg,
+                            iconSize: [42, 42],
+                            iconAnchor: [21, 21],
+                            className: 'team-logo-marker'
                         });
 
-                        // Содержимое баббла при клике
                         const popupHtml = `
-                            <div style="text-align:center; min-width: 140px; font-family: 'Inter', sans-serif;">
-                                <div style="width: 60px; height: 60px; margin: 0 auto 10px; border-radius: 50%; overflow: hidden; border: 2px solid var(--primary);">
-                                    <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover;">
+                            <div style="text-align:center; min-width: 140px;">
+                                <div style="width: 70px; height: 70px; margin: 0 auto 10px; border-radius: 50%; overflow: hidden; border: 2px solid #007bff; background: white;">
+                                    <img src="${finalImg}" style="width: 100%; height: 100%; object-fit: cover;">
                                 </div>
-                                <b style="font-size:14px; color: #333;">${name}</b><br>
-                                <span style="font-size:11px; color: #777;">${school}</span>
-                                ${(social && social.startsWith('http')) ? 
-                                `<br><a href="${social}" target="_blank" style="display:inline-block; margin-top:10px; color:white; background:var(--primary); padding:6px 12px; border-radius:6px; text-decoration:none; font-size:10px; font-weight:bold;">CONTACT</a>` 
-                                : ''}
+                                <b style="font-size:14px;">${name}</b><br>
+                                <i style="font-size:11px; color: #666;">${school}</i><br>
+                                <a href="${social}" target="_blank" style="display:inline-block; margin-top:8px; background:#007bff; color:white; padding:5px 10px; border-radius:5px; text-decoration:none; font-size:10px;">СВЯЗАТЬСЯ</a>
                             </div>
                         `;
-
                         L.marker(pos, { icon: icon }).addTo(map).bindPopup(popupHtml);
                     }
                 });
-            } catch (err) { 
-                console.error("Ошибка загрузки данных:", err); 
-            }
+            } catch (e) { console.log("Ошибка:", e); }
         }
         loadTeams();
     </script>
